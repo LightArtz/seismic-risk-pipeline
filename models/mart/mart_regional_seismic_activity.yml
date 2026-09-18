@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: mart_regional_seismic_activity
+    description: Mart earthquake events from int_earthquakes_enriched
+    columns:
+      - name: region
+        description: Region such as countries and oceans.
+        tests:
+          - not_null
+      - name: year
+        description: The year of the earthquake happened.
+        tests:
+          - not_null
+      - name: event_count
+        description: The total of earthquakes of a region in a year.
+      - name: avg_magnitude
+        description: The average earthquake magnitude of a region in a year.
