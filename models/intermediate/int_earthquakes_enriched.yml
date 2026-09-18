@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: int_earthquakes_enriched
+    description: Enriched earthquake events from stg_earthquakes, adding a magnitude band, parsed region, and event year/month.
+    columns:
+      - name: earthquake_id
+        description: Unique identifier for the earthquake event, passed through from stg_earthquakes.
+      - name: magnitude
+        description: Earthquake magnitude, passed through from stg_earthquakes.
+      - name: place
+        description: Raw place description as reported by USGS.
+      - name: event_time
+        description: UTC timestamp of the event.
+      - name: longitude
+        description: Longitude of the epicenter.
+      - name: latitude
+        description: Latitude of the epicenter.
+      - name: depth_km
+        description: Depth of the earthquake in kilometers.
+      - name: band
+        description: Magnitude bucketed into minor/light/moderate/strong/major.
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['minor', 'light', 'moderate', 'strong', 'major']
+      - name: region
+        description: Region parsed from place (text after the first comma); falls back to the full place string for entries with no comma, such as ocean ridges and named events.
+      - name: year
+        description: Calendar year extracted from event_time.
+      - name: month
+        description: Calendar month extracted from event_time.
