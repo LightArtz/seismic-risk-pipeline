@@ -1,0 +1,9 @@
+version: 2
+
+models:
+  - name: stg_earthquakes
+    columns:
+      - name: earthquake_id
+        tests:
+          - not_null
+          - unique
