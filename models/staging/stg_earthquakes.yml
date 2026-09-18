@@ -2,8 +2,22 @@ version: 2
 
 models:
   - name: stg_earthquakes
+    description: Cleaned, renamed earthquake events sourced from the raw USGS load, filtered to rows with a non-null magnitude.
     columns:
       - name: earthquake_id
+        description: Unique identifier for the earthquake event, from USGS's own event id.
         tests:
           - not_null
           - unique
+      - name: magnitude
+        description: Earthquake magnitude.
+      - name: place
+        description: Raw place description as reported by USGS.
+      - name: event_time
+        description: UTC timestamp of the event, converted from the raw epoch-milliseconds value.
+      - name: longitude
+        description: Longitude of the epicenter.
+      - name: latitude
+        description: Latitude of the epicenter.
+      - name: depth_km
+        description: Depth of the earthquake in kilometers.
