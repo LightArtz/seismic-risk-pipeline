@@ -3,3 +3,6 @@ target/
 dbt_packages/
 logs/
 .env
+raw_earthquakes.json
+temp_raw_earthquakes.json
+earthquakes_raw.csv
