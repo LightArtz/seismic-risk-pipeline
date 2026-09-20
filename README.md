@@ -42,13 +42,19 @@ graph LR
 
 ## Result
 
-<img width="1280" height="551" alt="image" src="https://github.com/user-attachments/assets/7ae09944-a846-4c7e-b6c0-e603892664f1" />
-<img width="1280" height="582" alt="image" src="https://github.com/user-attachments/assets/49312b18-3665-44ea-87f5-8cdbac594f3b" />
-
-
+![dbt lineage graph](docs/lineage_graph.png)
 
 *Top regions by event count, from `mart_regional_seismic_activity`:*
 
 | region | year | event_count | avg_magnitude |
 |---|---|---|---|
-| *(paste your actual top rows here once you query it)* |
+| South Sandwich Islands region | 2021 | 1094 | 4.82 |
+| Indonesia | 2019 | 1023 | 4.82 |
+| Indonesia | 2018 | 831 | 4.82 |
+| Philippines | 2023 | 793 | 4.79 |
+| Indonesia | 2022 | 772 | 4.78 |
+| Indonesia | 2023 | 756 | 4.80 |
+| Indonesia | 2021 | 720 | 4.79 |
+| Indonesia | 2015 | 710 | 4.79 |
+| Kermadec Islands region | 2021 | 659 | 4.85 |
+| Papua New Guinea | 2018 | 647 | 4.86 |
