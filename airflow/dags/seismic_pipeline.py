@@ -6,13 +6,38 @@ from datetime import timedelta
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 from airflow.providers.snowflake.hooks.snowflake import SnowflakeHook
+from airflow.providers.standard.operators.bash import BashOperator
+
+def notify_failure(context):
+    dag_id = context.get('dag_run').dag_id
+    task_id = context.get('task_instance').task_id
+    exception = context.get('exception')
+
+    print(f"DAG Failed: {dag_id}")
+    print(f"Task Failed: {task_id}")
+    print(f"Error: {exception}")
+
+def parse_feature(feature: dict) -> dict:
+    return {
+        "id": feature["id"],
+        "mag": feature["properties"]["mag"],
+        "place": feature["properties"]["place"],
+        "time": feature["properties"]["time"],
+        "longitude": feature["geometry"]["coordinates"][0],
+        "latitude": feature["geometry"]["coordinates"][1],
+        "depth_km": feature["geometry"]["coordinates"][2],
+    }
 
 @dag(
     dag_id="seismic_pipeline",
     schedule=CronDataIntervalTimetable("0 0 * * *", timezone='UTC'),
     start_date=pendulum.datetime(2026, 9, 21, tz='UTC'),
-    catchup=True,
-    default_args={'retries': 3, 'retry_delay': timedelta(seconds=10)}
+    catchup=False,
+    default_args={
+        'retries': 3, 
+        'retry_delay': timedelta(seconds=10),
+        'on_failure_callback': notify_failure,
+    }
 )
 
 def seismic_pipeline():
@@ -71,17 +96,7 @@ def seismic_pipeline():
         flat_rows = []
 
         for d in data['features']:
-            earthquake = {
-                "id": d["id"],
-                "mag": d["properties"]["mag"],
-                "place": d["properties"]["place"],
-                "time": d["properties"]["time"],
-                "longitude": d["geometry"]["coordinates"][0],
-                "latitude": d["geometry"]["coordinates"][1],
-                "depth_km": d["geometry"]["coordinates"][2]
-            }
-
-            flat_rows.append(earthquake)    
+            flat_rows.append(parse_feature(d))
 
         df = pd.DataFrame(flat_rows)    
         df.columns = [c.upper() for c in df.columns]
@@ -177,27 +192,50 @@ def seismic_pipeline():
         conn.close()
 
     @task
-    def verify_load():
-        conn = SnowflakeHook(snowflake_conn_id="snowflake-seismic_pipeline").get_conn()
-        cur = conn.cursor()
-
+    def verify_load(filename):
         # Input
         with open(f"{filename}") as f:
             data = json.load(f)
 
         # Flatten
-        extracted_ids = []
+        extracted_ids = [d['id'] for d in data['features']]
 
-        for d in data['features']:
-            earthquake = {
-                "id": d["id"],
-            }
-            extracted_ids.append(earthquake)
+        if not extracted_ids:
+            return
+        
+        conn = SnowflakeHook(snowflake_conn_id="snowflake-seismic_pipeline").get_conn()
+        cur = conn.cursor()
 
-        cur.execute(f"SELECT ID FROM {} WHERE ID NOT IN (SELECT ID FROM RAW.EARTHQUAKES_RAW)", )
-        # I want to build if ID exist, then show the ID diff and raise. If it returns nothing, then succeed. But I don't know if doing it full SQL is the best practice.
+        placeholders = ",".join(["%s"] * len(extracted_ids))
+        
+        sql = f"SELECT ID FROM RAW.EARTHQUAKES_RAW WHERE ID IN ({placeholders})"
+
+        cur.execute(sql, tuple(extracted_ids))
+
+        rows = cur.fetchall() # [('id1', ), ('id2', )]
+        found_ids = [row[0] for row in rows]
+
+        cur.close()
+        conn.close()
+
+        diff_ids = set(extracted_ids) - set(found_ids)
+
+        if diff_ids:
+            raise ValueError(f"The ids are not complete. There are {len(extracted_ids)} daily earthquakes, but {len(found_ids)} found in the table. The missing ids: {diff_ids}")
+
+    dbt_run = BashOperator(
+        task_id="dbt_run",
+        bash_command="dbt run --project-dir /opt/airflow/dbt_project --profiles-dir /opt/airflow/dbt_profile",
+    )
+
+    dbt_test = BashOperator(
+        task_id="dbt_test",
+        bash_command="dbt test --project-dir /opt/airflow/dbt_project --profiles-dir /opt/airflow/dbt_profile",
+    )
     
-    filename = load_raw(extract_usgs())
-    load_raw(filename) >> verify_load(filename)
+    filename = extract_usgs()
+    merge_result = load_raw(filename)
+    check = verify_load(filename)
+    merge_result >> check >> dbt_run >> dbt_test
 
 seismic_pipeline()
