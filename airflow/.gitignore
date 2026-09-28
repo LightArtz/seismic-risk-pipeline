@@ -3,4 +3,4 @@ logs/
 data/
 dags/__pycache__/
 __pycache__/
-dbt_profile/.user.yml
+dbt_profile/.user.yml"config/airflow.cfg" 
