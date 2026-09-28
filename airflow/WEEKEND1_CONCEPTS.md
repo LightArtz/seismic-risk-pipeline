@@ -1,4 +1,5 @@
 # Weekend 1: Airflow Foundations — Concepts
+> Note: the tutorial DAG (`hello_dag`) used for these Weekend 1 exercises was removed from the repo after completion. The concepts below apply directly to the production DAG, `seismic_pipeline`.
 
 Notes from building and breaking `hello_dag`, in my own words.
 
