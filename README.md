@@ -29,6 +29,14 @@ graph LR
 6. `dbt test` — runs all 6 data quality tests
 7. `dbt docs generate && dbt docs serve` — view the lineage graph and full documentation
 
+## Orchestration with Airflow
+
+The manual steps above are automated by an Apache Airflow DAG (`seismic_pipeline`) that runs daily. It extracts the previous day's events from USGS, merges them idempotently into Snowflake, verifies the load, then runs `dbt run` and `dbt test` as a quality gate. This adds scheduling, retries, failure callbacks, and safe reruns and backfills on top of the dbt project.
+
+![Airflow DAG graph view](airflow/docs/dag_graph_view.png)
+
+See [`airflow/README.md`](airflow/README.md) for setup, testing, and known limitations.
+
 ## Data quality tests
 
 - `not_null` / `unique` on `earthquake_id`
