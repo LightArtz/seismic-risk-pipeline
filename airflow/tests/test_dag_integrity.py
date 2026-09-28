@@ -1,4 +1,3 @@
-import os
 from airflow.models import DagBag
 
 def test_dags_import_successfully():
