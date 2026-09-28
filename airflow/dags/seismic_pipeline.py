@@ -1,5 +1,5 @@
-import requests, json, time, pendulum, json
-import os, pandas as pd, snowflake.connector
+import requests, json, pendulum
+import os, pandas as pd
 
 from airflow.sdk import dag, task, CronDataIntervalTimetable
 from datetime import timedelta
@@ -44,10 +44,6 @@ def seismic_pipeline():
     @task
     def extract_usgs(**context):
         url = "https://earthquake.usgs.gov/fdsnws/event/1/query"
-
-        print(f"context start/end: {context['data_interval_start']} / {context['data_interval_end']}")
-        print(f"dag_run start/end: {context['dag_run'].data_interval_start} / {context['dag_run'].data_interval_end}")
-        print(f"logical_date: {context.get('logical_date')}")
         
         starttime = context["data_interval_start"]
         endtime = context["data_interval_end"]
